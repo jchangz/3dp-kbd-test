@@ -46,3 +46,11 @@ table {
 	border-collapse: collapse;
 	border-spacing: 0;
 }
+
+.home {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100vh;
+}
