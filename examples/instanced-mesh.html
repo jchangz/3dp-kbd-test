@@ -19,9 +19,66 @@
         </script>
 
         <script type="module">
-
             import * as THREE from 'three';
 
+            import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+            import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+            import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+            import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+            let camera, scene, renderer, controls;
+
+            init();
+            animate();
+
+            function init() {
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                document.body.appendChild(renderer.domElement);
+
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+                camera.position.set(1, 1, 1);
+
+                const environment = new RoomEnvironment(renderer);
+                const pmremGenerator = new THREE.PMREMGenerator(renderer);
+
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0xbbbbbb);
+                scene.environment = pmremGenerator.fromScene(environment).texture;
+                environment.dispose();
+
+                const grid = new THREE.GridHelper(10, 20, 0xffffff, 0xffffff);
+                grid.material.opacity = 0.5;
+                grid.material.depthWrite = false;
+                grid.material.transparent = true;
+                scene.add(grid);
+
+                controls = new OrbitControls(camera, renderer.domElement);
+                controls.minDistance = 1;
+                controls.maxDistance = 10;
+
+                const manager = new THREE.LoadingManager();
+                const dracoLoader = new DRACOLoader(manager);
+                dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+                const loader = new GLTFLoader(manager).setDRACOLoader(dracoLoader);
+
+                window.addEventListener('resize', onWindowResize);
+            }
+
+            function onWindowResize() {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+            }
+
+            function animate() {
+                controls.update();
+                renderer.render(scene, camera);
+
+                requestAnimationFrame(animate);
+            }
         </script>
     </body>
 </html>
