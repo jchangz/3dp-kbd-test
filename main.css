@@ -52,5 +52,24 @@ table {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
     min-height: 100vh;
+}
+
+@media only screen and (min-width: 768px) {
+    .home {
+        font-size: 48px;
+    }
+}
+
+h1 {
+    font-size: 2em;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 1.4em;
+}
+
+a {
+    font-size: 1.2em;
+    margin-bottom: 0.6em;
 }
