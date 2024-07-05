@@ -29,6 +29,8 @@ class TOOL_OT_3dp_rename(Operator):
             obj.name = self.foo
             obj.data.name = self.foo
 
+        self.report({"INFO"}, "Object renamed: %r" % self.foo)
+
         return {"FINISHED"}
 
 
@@ -95,6 +97,8 @@ class TOOL_OT_3dp_dissolve(Operator):
 
         bm.free()
 
+        self.report({"INFO"}, "Applied limited dissolve (%r°)" % self.foo)
+
         return {"FINISHED"}
 
 
@@ -119,10 +123,6 @@ class TOOL_OT_3dp_unwrap(Operator):
             context.scene.collection.objects.link(my_camera)
         else:
             my_camera = bpy.data.objects["3DPCamera"]
-
-        if context.active_object.mode != "EDIT":
-            self.report({"ERROR"}, "Not in Edit Mode")
-            return {"CANCELLED"}
 
         if context.active_object.data.total_face_sel == 0:
             self.report({"ERROR"}, "No Faces Selected")
@@ -159,6 +159,8 @@ class TOOL_OT_3dp_unwrap(Operator):
 
         bpy.ops.view3d.view_camera()
 
+        self.report({"INFO"}, "UV projected from %r view" % self.foo)
+
         return {"FINISHED"}
 
 
@@ -179,7 +181,9 @@ class TOOL_OT_3dp_export(Operator):
             export_animations=False,
             export_morph=False,
         )
+
         self.report({"INFO"}, "Exported to: " + context.scene.settings.export_path)
+
         return {"FINISHED"}
 
 
