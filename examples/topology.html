@@ -7,7 +7,11 @@
         <link type="text/css" rel="stylesheet" href="../main.css" />
     </head>
     <body>
-        <div id="canvas"></div>
+        <!-- https://threejs.org/examples/#webgl_multiple_scenes_comparison -->
+
+        <div id="canvas">
+            <div class="slider"></div>
+        </div>
 
         <script type="importmap">
             {
@@ -28,30 +32,34 @@
 
             let camera, renderer, controls;
             let sceneL, sceneR;
+            let sliderPos = window.innerWidth / 2;
 
             init();
             animate();
 
             function init() {
+                const container = document.querySelector('#canvas');
+
                 renderer = new THREE.WebGLRenderer({ antialias: true });
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.setScissorTest(true);
                 renderer.setAnimationLoop(animate);
-                document.body.appendChild(renderer.domElement);
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                container.appendChild(renderer.domElement);
 
-                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+                camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
                 camera.position.set(1, 1, 1);
 
                 const environment = new RoomEnvironment(renderer);
                 const pmremGenerator = new THREE.PMREMGenerator(renderer);
 
                 sceneL = new THREE.Scene();
-                sceneL.background = new THREE.Color(0x000000);
+                sceneL.background = new THREE.Color(0xa0a0a0);
                 sceneL.environment = pmremGenerator.fromScene(environment).texture;
 
                 sceneR = new THREE.Scene();
-                sceneR.background = new THREE.Color(0x000000);
+                sceneR.background = new THREE.Color(0xa0a0a0);
                 sceneR.environment = pmremGenerator.fromScene(environment).texture;
 
                 const geometry = new THREE.TorusGeometry(0.5, 0.15, 16, 50);
@@ -80,7 +88,40 @@
                 dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
                 const loader = new GLTFLoader(manager).setDRACOLoader(dracoLoader);
 
+                initSlider();
+
                 window.addEventListener('resize', onWindowResize);
+            }
+
+            function initSlider() {
+                const slider = document.querySelector('.slider');
+
+                function onPointerDown() {
+                    if (event.isPrimary === false) return;
+
+                    controls.enabled = false;
+
+                    window.addEventListener('pointermove', onPointerMove);
+                    window.addEventListener('pointerup', onPointerUp);
+                }
+
+                function onPointerUp() {
+                    controls.enabled = true;
+
+                    window.removeEventListener('pointermove', onPointerMove);
+                    window.removeEventListener('pointerup', onPointerUp);
+                }
+
+                function onPointerMove(e) {
+                    if (event.isPrimary === false) return;
+
+                    sliderPos = Math.max(0, Math.min(window.innerWidth, e.pageX));
+
+                    slider.style.left = sliderPos - slider.offsetWidth / 2 + 'px';
+                }
+
+                slider.style.touchAction = 'none'; // disable touch scroll
+                slider.addEventListener('pointerdown', onPointerDown);
             }
 
             function onWindowResize() {
@@ -91,10 +132,10 @@
             }
 
             function animate() {
-                renderer.setScissor(0, 0, window.innerWidth / 2, window.innerHeight);
+                renderer.setScissor(0, 0, sliderPos, window.innerHeight);
                 renderer.render(sceneL, camera);
 
-                renderer.setScissor(window.innerWidth / 2, 0, window.innerWidth, window.innerHeight);
+                renderer.setScissor(sliderPos, 0, window.innerWidth, window.innerHeight);
                 renderer.render(sceneR, camera);
             }
         </script>

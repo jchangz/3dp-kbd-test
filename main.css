@@ -73,3 +73,14 @@ a {
     font-size: 1.2em;
     margin-bottom: 0.6em;
 }
+
+.slider {
+    position: absolute;
+    cursor: ew-resize;
+    opacity: 0.5;
+    width: 10px;
+    height: 100%;
+    background-color: #ffffff;
+    top: 0;
+    left: calc(50% - 5px);
+}
