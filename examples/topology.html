@@ -32,7 +32,8 @@
 
             let camera, renderer, controls;
             let sceneL, sceneR;
-            let sliderPos = window.innerWidth / 2;
+            let sliderEl;
+            let sliderPos = 0.5;
 
             init();
             animate();
@@ -94,7 +95,7 @@
             }
 
             function initSlider() {
-                const slider = document.querySelector('.slider');
+                sliderEl = document.querySelector('.slider');
 
                 function onPointerDown() {
                     if (event.isPrimary === false) return;
@@ -115,27 +116,31 @@
                 function onPointerMove(e) {
                     if (event.isPrimary === false) return;
 
-                    sliderPos = Math.max(0, Math.min(window.innerWidth, e.pageX));
+                    const xPos = Math.max(0, Math.min(window.innerWidth, e.pageX));
 
-                    slider.style.left = sliderPos - slider.offsetWidth / 2 + 'px';
+                    sliderPos = xPos / window.innerWidth;
+
+                    sliderEl.style.left = xPos - sliderEl.offsetWidth / 2 + 'px';
                 }
 
-                slider.style.touchAction = 'none'; // disable touch scroll
-                slider.addEventListener('pointerdown', onPointerDown);
+                sliderEl.style.touchAction = 'none'; // disable touch scroll
+                sliderEl.addEventListener('pointerdown', onPointerDown);
             }
 
             function onWindowResize() {
                 renderer.setSize(window.innerWidth, window.innerHeight);
+
+                sliderEl.style.left = sliderPos * window.innerWidth - sliderEl.offsetWidth / 2 + 'px';
 
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
             }
 
             function animate() {
-                renderer.setScissor(0, 0, sliderPos, window.innerHeight);
+                renderer.setScissor(0, 0, sliderPos * window.innerWidth, window.innerHeight);
                 renderer.render(sceneL, camera);
 
-                renderer.setScissor(sliderPos, 0, window.innerWidth, window.innerHeight);
+                renderer.setScissor(sliderPos * window.innerWidth, 0, window.innerWidth, window.innerHeight);
                 renderer.render(sceneR, camera);
             }
         </script>
