@@ -3,11 +3,12 @@ import os
 import bmesh
 import mathutils
 from bpy.types import Panel, Scene, Operator, PropertyGroup
-from bpy.props import StringProperty, IntProperty, PointerProperty
+from bpy.props import StringProperty, FloatProperty, IntProperty, PointerProperty
 from math import radians
 
 
 class ToolSettings(PropertyGroup):
+    scale_float: FloatProperty(name="Scale", default=0.01)
     ld_angle: IntProperty(name="Limited Dissolve Angle", min=1, default=5, max=5)
     export_path: StringProperty(name="File", subtype="FILE_PATH")
 
@@ -28,8 +29,6 @@ class TOOL_OT_3dp_rename(Operator):
         for obj in selected:
             obj.name = self.foo
             obj.data.name = self.foo
-
-        self.report({"INFO"}, "Object renamed: %r" % self.foo)
 
         return {"FINISHED"}
 
@@ -97,8 +96,6 @@ class TOOL_OT_3dp_dissolve(Operator):
 
         bm.free()
 
-        self.report({"INFO"}, "Applied limited dissolve (%r°)" % self.foo)
-
         return {"FINISHED"}
 
 
@@ -123,6 +120,10 @@ class TOOL_OT_3dp_unwrap(Operator):
             context.scene.collection.objects.link(my_camera)
         else:
             my_camera = bpy.data.objects["3DPCamera"]
+
+        if context.active_object.mode != "EDIT":
+            self.report({"ERROR"}, "Not in Edit Mode")
+            return {"CANCELLED"}
 
         if context.active_object.data.total_face_sel == 0:
             self.report({"ERROR"}, "No Faces Selected")
@@ -159,8 +160,6 @@ class TOOL_OT_3dp_unwrap(Operator):
 
         bpy.ops.view3d.view_camera()
 
-        self.report({"INFO"}, "UV projected from %r view" % self.foo)
-
         return {"FINISHED"}
 
 
@@ -181,9 +180,7 @@ class TOOL_OT_3dp_export(Operator):
             export_animations=False,
             export_morph=False,
         )
-
         self.report({"INFO"}, "Exported to: " + context.scene.settings.export_path)
-
         return {"FINISHED"}
 
 
@@ -196,6 +193,14 @@ class VIEW3D_PT_3dpkbd_uv_panel(Panel):
 
     def draw(self, context):
         layout = self.layout
+
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        settings = context.scene.settings
+
+        row = layout.row(align=True)
+        row.prop(settings, "scale_float", text="Scale",  icon="REMOVE")
         row = layout.row()
         row.operator("3dp.init", text="Initialize Model")
 
