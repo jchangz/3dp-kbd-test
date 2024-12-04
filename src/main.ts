@@ -4,6 +4,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js"
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js"
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js"
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js"
+import { GUI } from "three/addons/libs/lil-gui.module.min.js"
 import { MathUtils } from "three"
 import { geometry } from "./geometry.json"
 import "./style.css"
@@ -14,6 +15,12 @@ interface SwitchData {
     [key: string]: { length: number; matrix: number[] }
   }
 }
+
+const params = {
+  envMapRotation: 0,
+  envMapIntensity: 1,
+}
+const envMapRotation = new THREE.Euler(0, MathUtils.degToRad(params.envMapRotation), 0)
 
 let canvas: HTMLElement | null
 let camera: THREE.PerspectiveCamera
@@ -32,10 +39,14 @@ const keycapGLB = "keycaps.glb"
 const keyMat = new THREE.MeshStandardMaterial({
   color: 0x171718,
   roughness: 0.5,
+  envMapIntensity: params.envMapIntensity,
+  envMapRotation: envMapRotation,
 })
 const baseMat = new THREE.MeshStandardMaterial({
   color: 0x171718,
   roughness: 0.3,
+  envMapIntensity: params.envMapIntensity,
+  envMapRotation: envMapRotation,
 })
 
 init()
@@ -64,7 +75,9 @@ function init() {
     pmremGenerator.compileEquirectangularShader()
     const environment = new RoomEnvironment()
     const roomEnv = pmremGenerator.fromScene(environment).texture
-    scene.environment = roomEnv
+    keyMat.envMap = roomEnv
+    baseMat.envMap = roomEnv
+    // scene.environment = roomEnv
 
     camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 1, 1000)
     camera.position.set(0, 6, 12)
@@ -124,6 +137,21 @@ function init() {
       setKeyboardToCenter()
     }
   }
+
+  const gui = new GUI()
+  gui
+    .add(params, "envMapRotation", 0, 360)
+    .step(1)
+    .onChange((value) => {
+      const euler = new THREE.Euler(0, MathUtils.degToRad(value), 0)
+      keyMat.envMapRotation = euler
+      baseMat.envMapRotation = euler
+    })
+  gui.add(params, "envMapIntensity", 0, 1).onChange((value) => {
+    keyMat.envMapIntensity = value
+    baseMat.envMapIntensity = value
+  })
+  gui.open()
 
   window.addEventListener("resize", onWindowResize)
 }
