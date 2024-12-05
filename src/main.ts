@@ -23,6 +23,7 @@ const params = {
   envMapIntensity: 1,
   keyTextureRepeat: 10,
   keyColor: "#171718",
+  caseColor: "#171718",
 }
 
 let canvas: HTMLElement | null
@@ -38,12 +39,17 @@ const centerBox = new THREE.Box3()
 
 const switchGLB = "switch.glb"
 const keycapGLB = "keycaps.glb"
+const keyboardGLBArr = ["t1-q-left.glb", "t1-q-right-65.glb"]
 
 let roomEnv: THREE.Texture
 let studioEnv: THREE.Texture
 
 let keyNormal: THREE.Texture
 let keyRoughness: THREE.Texture
+let caseNormal: THREE.Texture
+let caseAO: THREE.Texture
+let caseRoughness: THREE.Texture
+let caseFaceNormal: THREE.Texture
 
 const envMapRotation = new THREE.Euler(0, MathUtils.degToRad(params.envMapRotation), 0)
 
@@ -56,6 +62,18 @@ const keyMat = new THREE.MeshStandardMaterial({
 const baseMat = new THREE.MeshStandardMaterial({
   color: 0x171718,
   roughness: 0.3,
+  envMapIntensity: params.envMapIntensity,
+  envMapRotation: envMapRotation,
+})
+const caseMat = new THREE.MeshStandardMaterial({
+  color: params.caseColor,
+  roughness: 0.5,
+  envMapIntensity: params.envMapIntensity,
+  envMapRotation: envMapRotation,
+})
+const faceMat = new THREE.MeshStandardMaterial({
+  color: params.caseColor,
+  roughness: 0.4,
   envMapIntensity: params.envMapIntensity,
   envMapRotation: envMapRotation,
 })
@@ -116,7 +134,35 @@ function init() {
     keyRoughness.repeat.set(params.keyTextureRepeat, params.keyTextureRepeat)
     keyMat.roughnessMap = keyRoughness
 
-    keyNormal.wrapS = keyNormal.wrapT = keyRoughness.wrapS = keyRoughness.wrapT = THREE.RepeatWrapping
+    caseNormal = texloader.load("textures/3dp_normal.webp")
+    caseNormal.repeat.set(0, 3)
+    caseMat.normalMap = caseNormal
+
+    caseRoughness = texloader.load("textures/3dp_roughness.webp")
+    caseRoughness.repeat.set(0, 3)
+    caseMat.roughnessMap = caseRoughness
+
+    caseAO = texloader.load("textures/3dp_ao.webp")
+    caseAO.repeat.set(0, 3)
+    caseMat.aoMap = caseAO
+
+    caseFaceNormal = texloader.load("textures/3dp_face.webp")
+    caseFaceNormal.repeat.set(25, 25)
+    faceMat.normalMap = caseFaceNormal
+
+    keyNormal.wrapS =
+      keyNormal.wrapT =
+      keyRoughness.wrapS =
+      keyRoughness.wrapT =
+      caseNormal.wrapS =
+      caseNormal.wrapT =
+      caseRoughness.wrapS =
+      caseRoughness.wrapT =
+      caseAO.wrapS =
+      caseAO.wrapT =
+      caseFaceNormal.wrapS =
+      caseFaceNormal.wrapT =
+        THREE.RepeatWrapping
 
     loader.load("q-left.glb", function (gltf) {
       gltf.scene.traverse((child) => {
@@ -136,6 +182,18 @@ function init() {
       })
       mainGroup.add(gltf.scene)
     })
+
+    keyboardGLBArr.forEach((kb) =>
+      loader.load(`models/${kb}`, function (gltf) {
+        gltf.scene.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.isMesh) {
+            if (child.name.includes("_2")) child.material = faceMat
+            else child.material = caseMat
+          }
+        })
+        mainGroup.add(gltf.scene)
+      })
+    )
 
     loader.load(switchGLB, function (gltf) {
       gltf.scene.visible = false
@@ -169,11 +227,28 @@ function init() {
       const euler = new THREE.Euler(0, MathUtils.degToRad(value), 0)
       keyMat.envMapRotation = euler
       baseMat.envMapRotation = euler
+      caseMat.envMapRotation = euler
+      faceMat.envMapRotation = euler
+      caseMat.needsUpdate = true
+      faceMat.needsUpdate = true
     })
   envGUI.add(params, "envMapIntensity", 0, 1).onChange((value) => {
     keyMat.envMapIntensity = value
     baseMat.envMapIntensity = value
+    caseMat.envMapIntensity = value
+    faceMat.envMapIntensity = value
   })
+
+  const caseGUI = gui.addFolder("Case")
+  caseGUI
+    .addColor(params, "caseColor")
+    .name("color")
+    .onChange((value) => {
+      caseMat.color.set(value)
+      faceMat.color.set(value)
+    })
+  caseGUI.add(caseMat, "roughness", 0, 1)
+  caseGUI.add(caseMat, "metalness", 0, 1)
 
   const keycapGUI = gui.addFolder("Keycaps")
   keycapGUI
@@ -276,10 +351,14 @@ function animate() {
     case "Room":
       keyMat.envMap = roomEnv
       baseMat.envMap = roomEnv
+      caseMat.envMap = roomEnv
+      faceMat.envMap = roomEnv
       break
     case "Studio":
       keyMat.envMap = studioEnv
       baseMat.envMap = studioEnv
+      caseMat.envMap = studioEnv
+      faceMat.envMap = studioEnv
       break
   }
 
