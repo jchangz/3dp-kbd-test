@@ -4,6 +4,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js"
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js"
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js"
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js"
+import { GainMapLoader } from "@monogrid/gainmap-js"
 import { GUI } from "three/addons/libs/lil-gui.module.min.js"
 import { MathUtils } from "three"
 import { geometry } from "./geometry.json"
@@ -17,6 +18,7 @@ interface SwitchData {
 }
 
 const params = {
+  envMap: "Room",
   envMapRotation: 0,
   envMapIntensity: 1,
   keyTextureRepeat: 10,
@@ -36,6 +38,9 @@ const centerBox = new THREE.Box3()
 
 const switchGLB = "switch.glb"
 const keycapGLB = "keycaps.glb"
+
+let roomEnv: THREE.Texture
+let studioEnv: THREE.Texture
 
 let keyNormal: THREE.Texture
 let keyRoughness: THREE.Texture
@@ -80,10 +85,20 @@ function init() {
     const pmremGenerator = new THREE.PMREMGenerator(renderer)
     pmremGenerator.compileEquirectangularShader()
     const environment = new RoomEnvironment()
-    const roomEnv = pmremGenerator.fromScene(environment).texture
-    keyMat.envMap = roomEnv
-    baseMat.envMap = roomEnv
-    // scene.environment = roomEnv
+    roomEnv = pmremGenerator.fromScene(environment).texture
+
+    const gainMap = new GainMapLoader(renderer).load(
+      ["gainmap/studio.webp", "gainmap/studio-gainmap.webp", "gainmap/studio.json"],
+      function (texture) {
+        const gainMapBackground = texture.renderTarget.texture
+        gainMapBackground.mapping = THREE.EquirectangularReflectionMapping
+        gainMapBackground.needsUpdate = true
+        const gainMapPMREMRenderTarget = pmremGenerator.fromEquirectangular(gainMapBackground)
+
+        studioEnv = gainMapPMREMRenderTarget.texture
+        gainMap.dispose()
+      }
+    )
 
     camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 1, 1000)
     camera.position.set(0, 6, 12)
@@ -145,7 +160,9 @@ function init() {
   }
 
   const gui = new GUI()
-  gui
+  const envGUI = gui.addFolder("Environment")
+  envGUI.add(params, "envMap", ["Room", "Studio"]).name("Environment")
+  envGUI
     .add(params, "envMapRotation", 0, 360)
     .step(1)
     .onChange((value) => {
@@ -153,7 +170,7 @@ function init() {
       keyMat.envMapRotation = euler
       baseMat.envMapRotation = euler
     })
-  gui.add(params, "envMapIntensity", 0, 1).onChange((value) => {
+  envGUI.add(params, "envMapIntensity", 0, 1).onChange((value) => {
     keyMat.envMapIntensity = value
     baseMat.envMapIntensity = value
   })
@@ -255,5 +272,16 @@ function onWindowResize() {
 }
 
 function animate() {
+  switch (params.envMap) {
+    case "Room":
+      keyMat.envMap = roomEnv
+      baseMat.envMap = roomEnv
+      break
+    case "Studio":
+      keyMat.envMap = studioEnv
+      baseMat.envMap = studioEnv
+      break
+  }
+
   renderer.render(scene, camera)
 }

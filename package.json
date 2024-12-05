@@ -14,6 +14,7 @@
     "vite": "^6.0.1"
   },
   "dependencies": {
+    "@monogrid/gainmap-js": "^3.0.6",
     "three": "^0.171.0"
   }
 }
