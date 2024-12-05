@@ -19,8 +19,9 @@ interface SwitchData {
 const params = {
   envMapRotation: 0,
   envMapIntensity: 1,
+  keyTextureRepeat: 10,
+  keyColor: "#171718",
 }
-const envMapRotation = new THREE.Euler(0, MathUtils.degToRad(params.envMapRotation), 0)
 
 let canvas: HTMLElement | null
 let camera: THREE.PerspectiveCamera
@@ -36,8 +37,13 @@ const centerBox = new THREE.Box3()
 const switchGLB = "switch.glb"
 const keycapGLB = "keycaps.glb"
 
+let keyNormal: THREE.Texture
+let keyRoughness: THREE.Texture
+
+const envMapRotation = new THREE.Euler(0, MathUtils.degToRad(params.envMapRotation), 0)
+
 const keyMat = new THREE.MeshStandardMaterial({
-  color: 0x171718,
+  color: params.keyColor,
   roughness: 0.5,
   envMapIntensity: params.envMapIntensity,
   envMapRotation: envMapRotation,
@@ -87,12 +93,12 @@ function init() {
 
     const texloader = new THREE.TextureLoader(manager)
 
-    const keyNormal = texloader.load("textures/key_normal.webp")
-    keyNormal.repeat.set(10, 10)
+    keyNormal = texloader.load("textures/key_normal.webp")
+    keyNormal.repeat.set(params.keyTextureRepeat, params.keyTextureRepeat)
     keyMat.normalMap = keyNormal
 
-    const keyRoughness = texloader.load("textures/key_roughness.webp")
-    keyRoughness.repeat.set(10, 10)
+    keyRoughness = texloader.load("textures/key_roughness.webp")
+    keyRoughness.repeat.set(params.keyTextureRepeat, params.keyTextureRepeat)
     keyMat.roughnessMap = keyRoughness
 
     keyNormal.wrapS = keyNormal.wrapT = keyRoughness.wrapS = keyRoughness.wrapT = THREE.RepeatWrapping
@@ -151,6 +157,24 @@ function init() {
     keyMat.envMapIntensity = value
     baseMat.envMapIntensity = value
   })
+
+  const keycapGUI = gui.addFolder("Keycaps")
+  keycapGUI
+    .addColor(params, "keyColor")
+    .name("color")
+    .onChange((value) => {
+      keyMat.color.set(value)
+    })
+  keycapGUI.add(keyMat, "roughness", 0, 1)
+  keycapGUI.add(keyMat, "metalness", 0, 1)
+  keycapGUI
+    .add(params, "keyTextureRepeat", 1, 10)
+    .step(1)
+    .onChange((value) => {
+      keyNormal.repeat.set(value, value)
+      keyRoughness.repeat.set(value, value)
+    })
+
   gui.open()
 
   window.addEventListener("resize", onWindowResize)
