@@ -24,6 +24,7 @@ const params = {
   keyTextureRepeat: 10,
   keyColor: "#171718",
   caseColor: "#171718",
+  caseTexture: "Original",
 }
 
 let canvas: HTMLElement | null
@@ -50,6 +51,7 @@ let caseNormal: THREE.Texture
 let caseAO: THREE.Texture
 let caseRoughness: THREE.Texture
 let caseFaceNormal: THREE.Texture
+let caseNormal2: THREE.Texture
 
 const envMapRotation = new THREE.Euler(0, MathUtils.degToRad(params.envMapRotation), 0)
 
@@ -66,6 +68,12 @@ const baseMat = new THREE.MeshStandardMaterial({
   envMapRotation: envMapRotation,
 })
 const caseMat = new THREE.MeshStandardMaterial({
+  color: params.caseColor,
+  roughness: 0.5,
+  envMapIntensity: params.envMapIntensity,
+  envMapRotation: envMapRotation,
+})
+const caseMat2 = new THREE.MeshStandardMaterial({
   color: params.caseColor,
   roughness: 0.5,
   envMapIntensity: params.envMapIntensity,
@@ -150,6 +158,9 @@ function init() {
     caseFaceNormal.repeat.set(25, 25)
     faceMat.normalMap = caseFaceNormal
 
+    caseNormal2 = texloader.load("textures/diy_3dp_normal.webp")
+    caseNormal2.repeat.set(0, 3)
+
     keyNormal.wrapS =
       keyNormal.wrapT =
       keyRoughness.wrapS =
@@ -162,6 +173,8 @@ function init() {
       caseAO.wrapT =
       caseFaceNormal.wrapS =
       caseFaceNormal.wrapT =
+      caseNormal2.wrapS =
+      caseNormal2.wrapT =
         THREE.RepeatWrapping
 
     loader.load("q-left.glb", function (gltf) {
@@ -225,21 +238,44 @@ function init() {
     .step(1)
     .onChange((value) => {
       const euler = new THREE.Euler(0, MathUtils.degToRad(value), 0)
-      keyMat.envMapRotation = euler
-      baseMat.envMapRotation = euler
-      caseMat.envMapRotation = euler
-      faceMat.envMapRotation = euler
+      keyMat.envMapRotation =
+        baseMat.envMapRotation =
+        caseMat.envMapRotation =
+        caseMat2.envMapRotation =
+        faceMat.envMapRotation =
+          euler
+      caseMat2.needsUpdate = true
       caseMat.needsUpdate = true
       faceMat.needsUpdate = true
     })
   envGUI.add(params, "envMapIntensity", 0, 1).onChange((value) => {
-    keyMat.envMapIntensity = value
-    baseMat.envMapIntensity = value
-    caseMat.envMapIntensity = value
-    faceMat.envMapIntensity = value
+    keyMat.envMapIntensity =
+      baseMat.envMapIntensity =
+      caseMat.envMapIntensity =
+      caseMat2.envMapIntensity =
+      faceMat.envMapIntensity =
+        value
   })
 
   const caseGUI = gui.addFolder("Case")
+  caseGUI
+    .add(params, "caseTexture", ["Original", "New"])
+    .name("Texture")
+    .onChange((value) => {
+      switch (value) {
+        case "Original":
+          caseMat.normalMap = caseNormal
+          caseMat.roughnessMap = caseRoughness
+          caseMat.aoMap = caseAO
+          break
+        case "New":
+          caseMat.normalMap = caseNormal2
+          caseMat.roughnessMap = null
+          caseMat.aoMap = null
+          break
+      }
+      caseMat.needsUpdate = true
+    })
   caseGUI
     .addColor(params, "caseColor")
     .name("color")
@@ -352,12 +388,14 @@ function animate() {
       keyMat.envMap = roomEnv
       baseMat.envMap = roomEnv
       caseMat.envMap = roomEnv
+      caseMat2.envMap = roomEnv
       faceMat.envMap = roomEnv
       break
     case "Studio":
       keyMat.envMap = studioEnv
       baseMat.envMap = studioEnv
       caseMat.envMap = studioEnv
+      caseMat2.envMap = studioEnv
       faceMat.envMap = studioEnv
       break
   }
