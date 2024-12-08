@@ -38,9 +38,9 @@ const fov = 50
 const centerVector = new THREE.Vector3()
 const centerBox = new THREE.Box3()
 
-const switchGLB = "switch.glb"
-const keycapGLB = "keycaps.glb"
-const keyboardGLBArr = ["t1-q-left.glb", "t1-q-right-65.glb"]
+const switchGLB = "models/switch.glb"
+const keycapGLB = "models/keycaps.glb"
+const keyboardGLBArr = ["models/t1-q-left.glb", "models/t1-q-right-65.glb"]
 
 let roomEnv: THREE.Texture
 let studioEnv: THREE.Texture
@@ -177,13 +177,13 @@ function init() {
       caseNormal2.wrapT =
         THREE.RepeatWrapping
 
-    loader.load("q-left.glb", function (gltf) {
+    loader.load("models/q-left.glb", function (gltf) {
       gltf.scene.traverse((child) => {
         if (child instanceof THREE.Mesh && child.isMesh) child.material = baseMat
       })
       mainGroup.add(gltf.scene)
     })
-    loader.load("q-right-65.glb", function (gltf) {
+    loader.load("models/q-right-65.glb", function (gltf) {
       gltf.scene.traverse((child) => {
         if (child instanceof THREE.Mesh && child.isMesh) child.material = baseMat
       })
@@ -197,7 +197,7 @@ function init() {
     })
 
     keyboardGLBArr.forEach((kb) =>
-      loader.load(`models/${kb}`, function (gltf) {
+      loader.load(kb, function (gltf) {
         gltf.scene.traverse((child) => {
           if (child instanceof THREE.Mesh && child.isMesh) {
             if (child.name.includes("_2")) child.material = faceMat
