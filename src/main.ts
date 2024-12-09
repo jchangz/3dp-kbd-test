@@ -19,12 +19,22 @@ interface SwitchData {
 
 const params = {
   envMap: "Room",
-  envMapRotation: 0,
+  envMapRotation: -90,
   envMapIntensity: 1,
   keyTextureRepeat: 10,
   keyColor: "#171718",
   caseColor: "#171718",
   caseTexture: "Original",
+  spotLight: {
+    visible: true,
+    intensity: 50,
+    angle: 45,
+    penumbra: 0.2,
+    helper: false,
+    x: 0,
+    y: 5,
+    z: -2,
+  },
 }
 
 let canvas: HTMLElement | null
@@ -85,6 +95,23 @@ const faceMat = new THREE.MeshStandardMaterial({
   envMapIntensity: params.envMapIntensity,
   envMapRotation: envMapRotation,
 })
+
+const spotLight = new THREE.SpotLight(0xffffff, params.spotLight.intensity)
+spotLight.visible = params.spotLight.visible
+spotLight.angle = MathUtils.degToRad(params.spotLight.angle)
+spotLight.penumbra = params.spotLight.penumbra
+spotLight.position.set(params.spotLight.x, params.spotLight.y, params.spotLight.z)
+spotLight.castShadow = true
+spotLight.shadow.camera.near = 3
+spotLight.shadow.camera.far = 10
+spotLight.shadow.radius = 5
+spotLight.shadow.blurSamples = 25
+
+const spotLightHelper = new THREE.SpotLightHelper(spotLight)
+spotLightHelper.visible = params.spotLight.helper
+
+scene.add(spotLightHelper)
+scene.add(spotLight)
 
 init()
 
@@ -199,6 +226,7 @@ function init() {
     keyboardGLBArr.forEach((kb) =>
       loader.load(kb, function (gltf) {
         gltf.scene.traverse((child) => {
+          child.castShadow = true
           if (child instanceof THREE.Mesh && child.isMesh) {
             if (child.name.includes("_2")) child.material = faceMat
             else child.material = caseMat
@@ -234,7 +262,7 @@ function init() {
   const envGUI = gui.addFolder("Environment")
   envGUI.add(params, "envMap", ["Room", "Studio"]).name("Environment")
   envGUI
-    .add(params, "envMapRotation", 0, 360)
+    .add(params, "envMapRotation", -360, 360)
     .step(1)
     .onChange((value) => {
       const euler = new THREE.Euler(0, MathUtils.degToRad(value), 0)
@@ -255,6 +283,45 @@ function init() {
       caseMat2.envMapIntensity =
       faceMat.envMapIntensity =
         value
+  })
+
+  const spotLightGUI = gui.addFolder("Spot Light")
+  spotLightGUI.add(params.spotLight, "visible").onChange((value) => {
+    spotLight.visible = value
+  })
+  spotLightGUI.add(params.spotLight, "x", -10, 10, 1).onChange((value) => {
+    spotLight.position.x = value
+    spotLightHelper.update()
+  })
+  spotLightGUI.add(params.spotLight, "y", -10, 10, 1).onChange((value) => {
+    spotLight.position.y = value
+    spotLightHelper.update()
+  })
+  spotLightGUI.add(params.spotLight, "z", -10, 10, 1).onChange((value) => {
+    spotLight.position.z = value
+    spotLightHelper.update()
+  })
+  spotLightGUI
+    .add(params.spotLight, "intensity", 0, 500)
+    .step(1)
+    .onChange((value) => {
+      spotLight.intensity = value
+      spotLightHelper.update()
+    })
+  spotLightGUI
+    .add(params.spotLight, "angle", 0, 90)
+    .step(1)
+    .onChange((value) => {
+      const angle = MathUtils.degToRad(value)
+      spotLight.angle = angle
+      spotLightHelper.update()
+    })
+  spotLightGUI.add(params.spotLight, "penumbra", 0, 1).onChange((value) => {
+    spotLight.penumbra = value
+    spotLightHelper.update()
+  })
+  spotLightGUI.add(params.spotLight, "helper").onChange((value) => {
+    spotLightHelper.visible = value
   })
 
   const caseGUI = gui.addFolder("Case")
