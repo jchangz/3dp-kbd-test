@@ -22,6 +22,7 @@ const params = {
   envMap: "Room",
   envMapRotation: -90,
   envMapIntensity: 1,
+  shadow: "Basic",
   keyTextureRepeat: 10,
   keyColor: "#171718",
   caseColor: "#171718",
@@ -63,6 +64,8 @@ let caseAO: THREE.Texture
 let caseRoughness: THREE.Texture
 let caseFaceNormal: THREE.Texture
 let caseNormal2: THREE.Texture
+let floorNormal: THREE.Texture
+let floorRoughness: THREE.Texture
 
 const envMapRotation = new THREE.Euler(0, MathUtils.degToRad(params.envMapRotation), 0)
 
@@ -96,6 +99,18 @@ const faceMat = new THREE.MeshStandardMaterial({
   envMapIntensity: params.envMapIntensity,
   envMapRotation: envMapRotation,
 })
+const floorMat = new THREE.MeshStandardMaterial({
+  color: 0x000000,
+  roughness: 0.9,
+  metalness: 0.6,
+})
+
+const shadowMat = new THREE.ShadowMaterial()
+shadowMat.opacity = 0.5
+const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), shadowMat)
+shadowPlane.rotation.x = -Math.PI / 2
+shadowPlane.receiveShadow = true
+scene.add(shadowPlane)
 
 const spotLight = new THREE.SpotLight(0xffffff, params.spotLight.intensity)
 spotLight.visible = params.spotLight.visible
@@ -115,6 +130,7 @@ scene.add(spotLightHelper)
 scene.add(spotLight)
 
 scene.background = new THREE.Color(params.background)
+scene.fog = new THREE.Fog(params.background, 10, 40)
 
 init()
 
@@ -191,6 +207,14 @@ function init() {
     caseNormal2 = texloader.load("textures/diy_3dp_normal.webp")
     caseNormal2.repeat.set(0, 3)
 
+    floorNormal = texloader.load("textures/concrete_normal.webp")
+    floorNormal.repeat.set(50, 50)
+    floorMat.normalMap = floorNormal
+
+    floorRoughness = texloader.load("textures/concrete_roughness.webp")
+    floorRoughness.repeat.set(50, 50)
+    floorMat.roughnessMap = floorRoughness
+
     keyNormal.wrapS =
       keyNormal.wrapT =
       keyRoughness.wrapS =
@@ -205,6 +229,10 @@ function init() {
       caseFaceNormal.wrapT =
       caseNormal2.wrapS =
       caseNormal2.wrapT =
+      floorRoughness.wrapS =
+      floorRoughness.wrapT =
+      floorNormal.wrapS =
+      floorNormal.wrapT =
         THREE.RepeatWrapping
 
     loader.load("models/q-left.glb", function (gltf) {
@@ -267,7 +295,10 @@ function init() {
   envGUI
     .addColor(params, "background")
     .name("Background")
-    .onChange((value) => (scene.background = new THREE.Color(value)))
+    .onChange((value) => {
+      scene.background = new THREE.Color(value)
+      scene.fog!.color = new THREE.Color(value)
+    })
   envGUI
     .add(params, "envMapRotation", -360, 360)
     .step(1)
@@ -291,6 +322,19 @@ function init() {
       faceMat.envMapIntensity =
         value
   })
+  envGUI
+    .add(params, "shadow", ["Basic", "Texture"])
+    .name("Shadow")
+    .onChange((value) => {
+      switch (value) {
+        case "Basic":
+          shadowPlane.material = shadowMat
+          break
+        case "Texture":
+          shadowPlane.material = floorMat
+          break
+      }
+    })
 
   const spotLightGUI = gui.addFolder("Spot Light")
   spotLightGUI.add(params.spotLight, "visible").onChange((value) => {
