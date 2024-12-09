@@ -18,6 +18,7 @@ interface SwitchData {
 }
 
 const params = {
+  background: "#121212",
   envMap: "Room",
   envMapRotation: -90,
   envMapIntensity: 1,
@@ -112,6 +113,8 @@ spotLightHelper.visible = params.spotLight.helper
 
 scene.add(spotLightHelper)
 scene.add(spotLight)
+
+scene.background = new THREE.Color(params.background)
 
 init()
 
@@ -261,6 +264,10 @@ function init() {
   const gui = new GUI()
   const envGUI = gui.addFolder("Environment")
   envGUI.add(params, "envMap", ["Room", "Studio"]).name("Environment")
+  envGUI
+    .addColor(params, "background")
+    .name("Background")
+    .onChange((value) => (scene.background = new THREE.Color(value)))
   envGUI
     .add(params, "envMapRotation", -360, 360)
     .step(1)
