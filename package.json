@@ -9,12 +9,12 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@types/three": "^0.180.0",
+    "@types/three": "^0.181.0",
     "typescript": "~5.9.3",
-    "vite": "^7.1.9"
+    "vite": "^7.2.4"
   },
   "dependencies": {
-    "@monogrid/gainmap-js": "^3.1.0",
-    "three": "^0.180.0"
+    "@monogrid/gainmap-js": "^3.4.0",
+    "three": "^0.181.2"
   }
 }
